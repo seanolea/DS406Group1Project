@@ -1,4 +1,4 @@
-# 1_reconstruct_safety_score.R
+# reconstruct_safety_score.R
 # Description: This script reproduces Nate Silver's safety score methodology
 # over the entire 30-year period (1985-2014). It calculates rates per ASK (avail_seat_km_per_week), standardizes them
 # according to the specific methodology detailed in the article, and computes a composite
