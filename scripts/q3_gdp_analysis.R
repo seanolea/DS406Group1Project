@@ -71,7 +71,7 @@ gdp <- read.csv("data/gdp-per-capita-worldbank.csv")
 
 # Only use country and gdp per capita columns
 gdp <- gdp %>%
-  filter(Year == 2014) %>%
+  filter(Year == 1999) %>%
   select(Entity, GDP.per.capita)
 
 # renaming columns
@@ -90,7 +90,7 @@ merged <- merge(data_airlines, gdp, by = "country")
 # 2) gdp -> future safety
 
 cor_past_future <- cor(merged$inc_rate_past, merged$inc_rate_future)
-cor_gdp_future <- cor(merged$GDP.per.capita, merged$inc_rate_future)
+cor_gdp_future <- cor(log(merged$GDP.per.capita), merged$inc_rate_future)
 
 print(cor_past_future)
 print(cor_gdp_future)
@@ -108,26 +108,26 @@ p1 <- ggplot(merged, aes(x = inc_rate_past, y = inc_rate_future)) +
 ggsave("plots/past_vs_future.png", plot = p1, width = 10, height = 8)
 
 # Plot for GDP vs Future Safety
-p2 <- ggplot(merged, aes(x = GDP.per.capita, y = inc_rate_future)) +
+p2 <- ggplot(merged, aes(x = log(GDP.per.capita), y = inc_rate_future)) +
   geom_point() +
   geom_smooth(method = "lm", se = FALSE) +
   theme_minimal() +
   labs(
     title = "GDP per Capita vs Future Incident Rates",
-    x = "GDP per Capita",
+    x = "Log GDP per Capita",
     y = "Future Incident Rate"
   )
 ggsave("plots/gdp_vs_future.png", plot = p2, width = 10, height = 8)
 
 # regression models
 model_past <- lm(inc_rate_future ~ inc_rate_past, data = merged)
-model_gdp <- lm(inc_rate_future ~ GDP.per.capita, data = merged)
+model_gdp <- lm(inc_rate_future ~ log(GDP.per.capita), data = merged)
 
 summary(model_past)
 summary(model_gdp)
 
 # Interpretation
-# From the correlation analysis we can see a moderate positive relationship between past and future incident rates
+# From the correlation analysis we can see a weak positive relationship between past and future incident rates
 # (correlation = 0.355), indicating that airlines with higher incident rates in the past tend to have slightly
 # higher future rates. This relationship is statistically significant, with a p-value of 0.016, however the 
 # explanatory power is low (R^2 = 0.126), meaning past results explains only a small proportion of variation in 
@@ -139,4 +139,5 @@ summary(model_gdp)
 # however once again, the explanatory power is low at 0.122.
 #
 # Overall, both variables show weak yet statistically significant relationships with future incident rates, and
-# neither one outperforms the other in terms of explanatory strength
+# neither one outperforms the other in terms of explanatory strength. Therefore, GDP per capita does not explain
+# airline safety better than historical safety records.
