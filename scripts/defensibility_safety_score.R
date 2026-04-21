@@ -98,3 +98,20 @@ p <- ggplot(var_df, aes(x = PC, y = Variance, fill = PC)) +
   theme(plot.title = element_text(hjust = 0.5), legend.position = "none")
 
 ggsave("../plots/pca_safety_score.png", plot = p, width = 8, height = 6)
+
+# Interpretation
+
+# The correlation analysis of safety components reveals positive relationships among all three metrics.
+# Specifically, the correlation between fatal accidents and incidents is the strongest (darkest red),
+# followed by fatalities and fatal accidents, and lastly fatalities and incidents (lightest red).
+# This indicates that all three metrics are positively correlated, suggesting they measure a shared
+# underlying dimension of safety.
+
+# The Principal Component Analysis (PCA) plot demonstrates that a single underlying safety factor
+# explains the majority of the variance in the data. The first principal component (PC1) accounts
+# for 79% of the total variance, while PC2 and PC3 account for 19% and 2%, respectively.
+
+# In conclusion, since the safety components are positively correlated and PC1 explains an
+# overwhelming majority (79%) of the variance, combining incidents, fatal accidents, and fatalities
+# into a single composite safety score is statistically defensible and effectively captures the
+# overall safety performance of the airlines.
