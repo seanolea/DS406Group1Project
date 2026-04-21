@@ -1,17 +1,16 @@
 # q3_gdp_analysis.R
-# Description: This script investigates whether the GDP per capita of a country explains its airline
+# Description: This script investigates whether the GDP per capita of a country explains airline
 # safety better than past safety records. It compares the following using correlation and regression:
-# 1) GDP vs future incident rates
-# 2) past vs future incident rates
+# 1) Past vs future incident rates
+# 2) GDP per capita vs a composite safety score (Silver's method)
 
 library(dplyr)
 library(ggplot2)
 
-# read in original data provided
-data_airlines <- read.csv("data/1AirlineSafety.csv")
+# source composite safety score from other file
+source("scripts/reconstruct_safety_score.R", chdir = TRUE)
 
-# normalising by "available seat kilometers per week" (ASK) for a rate to compare airlines fairly since
-# incident counts are misleading due to airlines differing in size
+# create past and future incident rates
 data_airlines <- data_airlines %>%
   mutate(
     # Past incident rate (1985–1999)
@@ -20,6 +19,7 @@ data_airlines <- data_airlines %>%
     # Future incident rate (2000–2014)
     inc_rate_future = incidents_00_14 / avail_seat_km_per_week
   )
+
 
 # linking airlines to a country to later merge with the GDP data
 # first cleaning airline names with asterisks in it
@@ -47,20 +47,20 @@ country_lookup <- data.frame(
   country = c(
     "Ireland","Russia","Argentina","Mexico",
     "Canada","France","India","New Zealand",
-    "USA","Italy","Japan","USA",
-    "Austria","Colombia","UK","Hong Kong",
-    "Taiwan","Germany","Panama","USA",
+    "United States","Italy","Japan","United States",
+    "Austria","Colombia","United Kingdom","Hong Kong",
+    "Taiwan","Germany","Panama","United States",
     "Egypt","Israel","Ethiopia","Finland",
-    "Indonesia","Bahrain","USA","Spain",
+    "Indonesia","Bahrain","United States","Spain",
     "Japan","Kenya","Netherlands","South Korea",
     "Chile","Germany","Malaysia",
     "Pakistan","Philippines","Australia",
     "Morocco","Sweden","Saudi Arabia","Singapore",
-    "South Africa","USA","Sri Lanka",
+    "South Africa","United States","Sri Lanka",
     "Switzerland","El Salvador","Brazil","Portugal",
-    "Thailand","Turkey","USA",
-    "USA","Vietnam",
-    "UK","China"
+    "Thailand","Turkey","United States",
+    "United States","Vietnam",
+    "United Kingdom","China"
   )
 )
 
@@ -82,18 +82,17 @@ gdp <- gdp %>%
 
 # combine each dataset by country
 merged <- merge(data_airlines, gdp, by = "country")
-# some airlines have been dropped due to country names not matching, however 46 matched is enough
+# Taiwan was dropped as it's not included in the GDP dataset, however 55 matched is enough
 # (compared to 56)
 
-# analysing correlation to compare strength of relationships:
-# 1) past safety -> future safety
-# 2) gdp -> future safety
+# analysing relationships:
+# 1) past vs future incident rates
+# 2) GDP vs composite safety score 
 
 cor_past_future <- cor(merged$inc_rate_past, merged$inc_rate_future)
-cor_gdp_future <- cor(log(merged$GDP.per.capita), merged$inc_rate_future)
-
+cor_gdp_safety <- cor(log(merged$GDP.per.capita), merged$safety_score)
 print(cor_past_future)
-print(cor_gdp_future)
+print(cor_gdp_safety)
 
 # Plot for Past vs Future safety
 p1 <- ggplot(merged, aes(x = inc_rate_past, y = inc_rate_future)) +
@@ -107,37 +106,39 @@ p1 <- ggplot(merged, aes(x = inc_rate_past, y = inc_rate_future)) +
   )
 ggsave("plots/past_vs_future.png", plot = p1, width = 10, height = 8)
 
-# Plot for GDP vs Future Safety
-p2 <- ggplot(merged, aes(x = log(GDP.per.capita), y = inc_rate_future)) +
+# Plot for GDP vs Safety score
+p2 <- ggplot(merged, aes(x = log(GDP.per.capita), y = safety_score)) +
   geom_point() +
   geom_smooth(method = "lm", se = FALSE) +
   theme_minimal() +
   labs(
-    title = "GDP per Capita vs Future Incident Rates",
+    title = "GDP per Capita vs Safety Score",
     x = "Log GDP per Capita",
-    y = "Future Incident Rate"
+    y = "Safety Score"
   )
-ggsave("plots/gdp_vs_future.png", plot = p2, width = 10, height = 8)
+ggsave("plots/gdp_vs_safety.png", plot = p2, width = 10, height = 8)
 
 # regression models
 model_past <- lm(inc_rate_future ~ inc_rate_past, data = merged)
-model_gdp <- lm(inc_rate_future ~ log(GDP.per.capita), data = merged)
-
+model_gdp <- lm(safety_score ~ log(GDP.per.capita), data = merged)
 summary(model_past)
 summary(model_gdp)
 
 # Interpretation
 # From the correlation analysis we can see a weak positive relationship between past and future incident rates
-# (correlation = 0.355), indicating that airlines with higher incident rates in the past tend to have slightly
-# higher future rates. This relationship is statistically significant, with a p-value of 0.016, however the 
-# explanatory power is low (R^2 = 0.126), meaning past results explains only a small proportion of variation in 
+# (correlation = 0.375), indicating that airlines with higher incident rates in the past tend to have slightly
+# higher future rates. This relationship is statistically significant, with a p-value of 0.005, however the 
+# explanatory power is low (R^2 = 0.141), meaning past results explain only a small proportion of variation in 
 # future outcomes.
 #
-# A similar strength correlation can be seen between GDP per capita and future incident rates, however here it 
-# is a negative one (correlation = -0.349). This suggests that airlines based in more wealthy countries tend
-# to have slightly lower incident rates. This effect is also statistically significant with a p-value of 0.018,
-# however once again, the explanatory power is low at 0.122.
+# In contrast a stronger relationship can be seen between GDP per capita and composite safety score
+# (correlation = 0.69). This positive relationship suggests that airlines based in more wealthy countries
+# tend to have significantly better safety outcomes. This effect is also statistically significant, with a  much higher 
+# explanatory power of R^2 = 0.48
 #
-# Overall, both variables show weak yet statistically significant relationships with future incident rates, and
-# neither one outperforms the other in terms of explanatory strength. Therefore, GDP per capita does not explain
-# airline safety better than historical safety records.
+# Overall, GDP per capita shows a substantially stronger relationship with airline safety than past incident
+# rates when safety is measured using a composite score. Therefore, GDP per capita explains airline safety better
+# than an airline’s own historical safety record.
+#
+# This aligns very closely with Silver's findings, where a strong correlation of 0.7 was found when using the 
+# composite safety measure

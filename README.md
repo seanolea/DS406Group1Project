@@ -24,4 +24,4 @@ Seán, Cillian, Raphaël, Grace
 
 ## Data Sources
 - Airline safety data: provided by Szymon (originally from FiveThirtyEight/Aviation Safety Network)
-- GDP data: [to be added]
+- GDP data: GDP per capita (constant 2015 US$) dataset, sourced from Our World in Data
